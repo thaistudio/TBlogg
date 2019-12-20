@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Events\Post\PostCreate;
+use App\Listeners\Post\PostNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -20,6 +22,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         'Illuminate\Auth\Events\Login' => [
             'App\Listeners\user_log_in_time_listener',
+        ],
+        PostCreate::class => [
+            PostNotification::class,
         ]
     ];
 

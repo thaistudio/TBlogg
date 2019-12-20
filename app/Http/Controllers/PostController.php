@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\ControllerHelper\Cache\UserCH;
-use App\ControllerHelper\Cache\PostCH;
+use App\ControllerHelper\Cache\PostsCH;
 use Illuminate\Support\Facades\Cache;
 
 class PostController extends Controller
@@ -30,14 +30,13 @@ class PostController extends Controller
     {
         if (!Auth::check())
         {
-            $msg = "Please Sign In To Start Blogging";
-            return view('auth.login')->with('msg', $msg);
+            return view('auth.login')->with('msg', "Please Sign In To Start Blogging");
         }
         else
         {
             $user_id = Auth::user()->id;
-            $contents = UserCH::get_partners($user_id, 'post')->sortByDesc('created_at');
-            return view('posts.post')->with('contents', $contents);
+            $data = UserCH::get_partners_data($user_id, 'post');
+            return view('posts.post')->with($data);
         }
     }
 
@@ -65,25 +64,7 @@ class PostController extends Controller
             'cover_image' => 'image|nullable|max:1999'
         ]);
 
-        $file = $request->file('cover_image');
-        if (!is_null($file))
-        {
-            $file_name_with_ext = $file->getClientOriginalName();
-            $file_name_no_ext = pathinfo($file_name_with_ext, PATHINFO_FILENAME);
-            $file_ext = $file->getClientOriginalExtension();
-            $filename_to_upload =  $file_name_no_ext.'_'.time().'.'.$file_ext;
-            // Upload the cover image
-            $file->storeAs('public/cover_images', $filename_to_upload);
-        }
-        else
-        {
-            $filename_to_upload = 'noimage.jpg';
-        }
-
-        PostCH::update_post($request->input('blogtitle'),
-        $request->input('blogcontent'),
-        Auth::user()->id,
-        $filename_to_upload);
+        $post = PostsCH::store_post($request, Auth::user()->id);
 
         return redirect('/posts')->with('success', 'Post Created Successfully');
     }
@@ -96,8 +77,8 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        $post = PostCH::all()->where('id', $id)->first();
-        $comments = PostCH::get_partners($id, 'comment')->sortByDesc('created_at');
+        $post = PostsCH::all()->where('id', $id)->first();
+        $comments = PostsCH::get_partners($id, 'comment')->sortByDesc('created_at');
         $data = ['content' => $post, 'comments' => $comments];
         return view('posts.personalblogcontent')->with($data);
     }
@@ -110,7 +91,7 @@ class PostController extends Controller
      */
     public function edit($id)
     {
-        $content = PostCH::get_post($id);
+        $content = PostsCH::get_post($id);
         return view('posts.personalblogcontentedit')->with('content', $content);
     }
 
@@ -129,34 +110,9 @@ class PostController extends Controller
             'cover_image' => 'image|nullable|max:1999'
         ]);
 
-        $file = $request->file('cover_image');
-        $post = PostCH::get_post($id);
-
-        // Update blog's cover image
-        if (!is_null($file))
-        {
-            $file_name_with_ext = $file->getClientOriginalName();
-            $file_name_no_ext = pathinfo($file_name_with_ext, PATHINFO_FILENAME);
-            $file_ext = $file->getClientOriginalExtension();
-            $filename_to_upload =  $file_name_no_ext.'_'.time().'.'.$file_ext;
-            // Delete the current cover image
-            Storage::delete(['public/cover_images/'.$post->cover_image]);
-            // Upload the new cover image
-            $file->storeAs('public/cover_images', $filename_to_upload);
-            // Set the new cover_image name in the database
-            $post->cover_image = $filename_to_upload;
-        }
-
-        // Update blog's content
-        $post->title = $request->input('blogtitle');
-        $post->body = $request->input('blogcontent');
-
-        $post->save();
+        $post = PostsCH::update_post($request, $id);
 
         $previous = $request->input('url');
-
-        Cache::flush();
-
         // Return the previous view where edit button was hit
         return redirect($previous)->with('success', 'Updated Successfully');
     }
@@ -169,16 +125,7 @@ class PostController extends Controller
      */
     public function destroy($id)
     {
-        $post = PostCH::get_post($id);
-
-        if ($post->cover_image !== 'noimage.png')
-        {
-            Storage::delete(['public/cover_images/'.$post->cover_image]);
-        }
-
-        $post->delete();
-
-        Cache::flush();
+        PostsCH::delete_post($id);
 
         return redirect('/posts')->with('success', 'Deleted Successfully');
     }
@@ -186,5 +133,24 @@ class PostController extends Controller
     public function create_comment()
     {
         return view('pages.index');
+    }
+
+    public function collect(Request $request, $post_id)
+    {
+        $message = PostsCH::collect_post($request, $post_id);
+        return redirect('/social')->with('success', $message);
+    }
+
+    public function dis_collect(Request $request, $post_id)
+    {
+        $message = PostsCH::dis_collect_post($request, $post_id);
+        return redirect('/social')->with('success', $message);
+    }
+
+    public function show_collection(Request $request, $post_id)
+    {
+        $user_id = Auth::user()->id;
+        $data = UserCH::get_post_collection($user_id);
+        return view('posts.post')->with($data);
     }
 }

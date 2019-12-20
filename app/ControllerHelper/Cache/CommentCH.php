@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
-class PostCH
+class CommentCH
 {
     CONST CACHE_PREFIX = 'COMMENTS';
     static function all() : Collection

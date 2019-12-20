@@ -16,6 +16,13 @@
                 <li class="nav-item">
                     <a href="/posts" class="nav-link">Personal Blog</a>
                 </li>
+
+                @if (Auth::user())
+                    <li class="nav-item">
+                        <a href="/{{Auth::user()->id}}/collection" class="nav-link">Fav Collection</a>
+                    </li>
+                @endif
+
                 <li class="nav-item">
                     <a href="/social" class="nav-link">Social</a>
                 </li>

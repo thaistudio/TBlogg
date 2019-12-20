@@ -38,6 +38,7 @@ return [
         'stack' => [
             'driver' => 'stack',
             'channels' => ['daily'],
+            'name' => 'thailog',
             'ignore_exceptions' => false,
         ],
 

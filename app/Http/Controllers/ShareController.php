@@ -2,34 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\ControllerHelper\Cache\PostsCH;
 use Illuminate\Http\Request;
 use App\Post;
+use Carbon\Carbon;
 use DateTime;
+use Doctrine\DBAL\Schema\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ShareController extends Controller
 {
-    public function share($post_id, Request $request)
+    public function share(Request $request, $post_id)
     {
-        $time = new DateTime();
-        $post = Post::find($post_id);
-        $post->shared_at = $time;
-        $post->save();
-        $contents = Auth::user()->post;
-        $data = ['contents' => $contents];
-        $request->session()->flash('success', 'Shared Successfully');
+        $data = PostsCH::share_post($request, $post_id);
 
         return redirect()->back()->with($data);
     }
 
-    public function unshare($post_id, Request $request)
+    public function unshare(Request $request, $post_id)
     {
-        $post = Post::find($post_id);
-        $post->shared_at = null;
-        $post->save();
-        $contents = Auth::user()->posts;
-        $data = ['contents' => $contents];
-        $request->session()->flash('success', 'Unshared Successfully');
+        $data = PostsCH::unshare_post($request, $post_id);
 
         return redirect()->back()->with($data);
     }

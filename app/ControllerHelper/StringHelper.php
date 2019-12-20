@@ -13,11 +13,10 @@ class StringHelper
         {
             $result .= $item . " ";
         }
-        return $result . "...";
-    }
 
-    public static function bs()
-    {
-        return 'bs';
+        if (str_word_count($body) > 10)
+            return $result . "...";
+        else
+            return $result;
     }
 }
